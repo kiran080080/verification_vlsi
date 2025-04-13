@@ -1,0 +1,30 @@
+Assume generator class consists of three 8-bit data members (x,y, and z). '
+Write a code to generate 20 random values for all the data members at an 
+interval of 20 ns. Random values for all data members should range from
+0 to 50. Share your SV Code.
+
+
+class generator;
+randc bit[7:0]x,y,z;
+extern constraint data;
+endclass
+
+constraint generator ::data{
+x inside {[0:50]}; 
+y inside {[0:50]};
+z inside {[0:50]};
+}
+module ass2();
+generator g1;
+initial begin
+g1=new();
+for(int i=0;i<20;i++) begin
+if(!g1.randomize) begin
+$display("randomization failed at time %0t",$time);
+$finish;
+end
+$display("x=%0d,y=%0d,z=%0d",g1.x,g1.y,g1.z);
+#20;
+end
+end
+endmodule
