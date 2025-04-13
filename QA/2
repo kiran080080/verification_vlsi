@@ -1,0 +1,17 @@
+/*Create a Class consisting of 3 data members each of unsigned integer type. Initialize them to 45,78, and 90.
+Use the display function to print the values on the console. Share your SV Code.*/
+
+class e1;
+   int unsigned a,b,c;
+     endclass
+     
+     module class2();
+       e1 f1;
+     initial begin
+     f1=new();//constructor
+     f1.a=45;
+     f1.b=78;
+     f1.c=90;
+     $display("%0d, %0d, %0d",f1.a,f1.b,f1.c);
+     end
+     endmodule
