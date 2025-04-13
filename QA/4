@@ -1,0 +1,22 @@
+Create a function that generate and return 
+32 values of multiple of 8 (0, 8, 16, 24, 32, 40 .... 248).
+Store this value in the local array of the testbench top and
+also print the value of each element
+of this array on the console. Share your SV Code.
+
+
+module assignment_func_array();
+int ain[32];
+function automatic  void mul_8(ref int a[32]);
+for(int i=0;i<32;i++)
+a[i]=i*8;
+endfunction
+
+
+initial begin 
+mul_8(ain);
+for(int i=0;i<32;i++) begin
+$display("a[%0d]:%0d",i,ain[i]);
+end
+end
+endmodule
