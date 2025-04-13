@@ -1,0 +1,104 @@
+/*Create a deep copy of the Generator class. To verify the deep copy code assign 
+value of the copy method to another instance of the generator class in TB top. 
+Print the value of data members in the generator class as well as copied class.
+Refer Instruction tab for Generator class code. Share your SV Code.
+
+Instructions:
+class generator;
+ bit [3:0] a = 5,b =7;
+ bit wr = 1;
+ bit en = 1;
+bit [4:0] s = 12;
+function void display();
+$display("a:%0d b:%0d wr:%0b en:%0b s:%0d", a,b,wr,en,s);
+endfunction
+endclass*/
+
+
+class generator;
+
+    bit [3:0] a = 5, b = 7;
+
+    bit wr = 1;
+
+    bit en = 1;
+
+    bit [4:0] s = 12;
+
+    function void display();
+
+        $display("a:%0d b:%0d wr:%0b en:%0b s:%0d", a, b, wr, en, s);
+
+    endfunction
+
+    function generator copy();
+
+        generator copy_instance = new();
+
+        copy_instance.a = this.a;
+
+        copy_instance.b = this.b;
+
+        copy_instance.wr = this.wr;
+
+        copy_instance.en = this.en;
+
+        copy_instance.s = this.s;
+
+        return copy_instance; 
+
+    endfunction
+
+endclass
+
+module testbench();
+
+    generator gen1;  
+
+    generator gen2;
+
+
+
+    initial begin
+
+        gen1 = new();
+
+        gen1.a = 10;
+
+        gen1.b = 15;
+
+        gen1.wr = 0;
+
+        gen1.en = 1;
+
+        gen1.s = 20;
+
+        $display("Original generator (gen1):");
+
+        gen1.display();
+
+        gen2 = gen1.copy();
+
+        $display("Copied generator (gen2):");
+
+        gen2.display();
+
+        gen1.a = 5;
+
+        gen1.b = 10;
+
+        gen1.s = 25;
+
+        $display("Modified original generator (gen1):");
+
+        gen1.display();
+
+        $display("Unchanged copied generator (gen2):");
+
+        gen2.display();
+
+        $finish; 
+
+    end
+
+endmodule
