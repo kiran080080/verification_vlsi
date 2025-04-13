@@ -1,0 +1,18 @@
+/*Create a function that will perform the multiplication of the
+two unsigned integer variables. Compare values return by function 
+with the expected result and if both values match send 'Test Passed' to Console
+else send 'Test Failed'. Share your SV Code.*/
+
+module class2_function();
+function int unsigned mul(input bit[31:0] ain=20,bin=30);
+return ain*bin;
+endfunction
+bit status;
+initial begin
+if(mul()==600)
+status=1;
+else
+status=0;
+$display("status:%0b",status);
+end
+endmodule
