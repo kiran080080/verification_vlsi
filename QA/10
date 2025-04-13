@@ -1,0 +1,56 @@
+/////same question as 9 but different strategy
+
+
+
+
+
+
+
+
+////class generator;
+  
+  rand bit [4:0] a;
+  rand bit [5:0] b;
+  int min_a,min_b,max_a,max_b;
+function void pre_randomize1(input int min_a,input int min_b,input int max_a, input int max_b);
+this.min_a=min_a;
+this.min_b=min_b;
+this.max_a=max_a;
+this.max_b=max_b;
+endfunction
+
+constraint data{
+a inside {[min_a:max_a]};
+b inside {[min_b:max_b]};
+}
+endclass
+
+
+
+module my_exp();
+generator g5;
+int error=0;
+initial begin
+g5=new();
+
+g5.pre_randomize1(0,65,5,100);
+for(int i=0;i<20;i++) begin
+if(!g5.randomize) begin
+ error=error+1;
+end
+$display(" value of a=%0d,b=%0d, and randomization failed %0d",g5.a,g5.b,error);
+#20;
+end
+
+
+
+g5.pre_randomize1(40,30,50,70);
+for(int i=0;i<20;i++) begin
+if(!g5.randomize) begin
+error=error+1;
+end
+$display(" value of a=%0d,b=%0d, and randomization failed %0d",g5.a,g5.b,error);
+#20;
+end
+end
+endmodule
