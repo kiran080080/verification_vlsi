@@ -1,1 +1,23 @@
+/*Assume the class consists of three 8-bit data members 
+a, b, and c. Create a Custom Constructor that allows 
+the user to update the value of these data members 
+while adding a constructor to the class. Test your 
+code by adding the value of 2, 4, and 56 to a, b and 
+c respectively. Share your SV Code.*/
 
+
+class ass1;
+int data1,data2,data3;
+function new(input int data1,input int data2,input int data3);
+data1=data1;
+data2=data2;
+data3=data3;
+endfunction
+endclass
+module assignment_1();
+ass1 obj;
+initial begin
+obj=new(2,4,6);
+$display("a,b,c=%0d,%0d,%0d",obj.data1,obj.data2,obj.data3);
+end
+endmodule
