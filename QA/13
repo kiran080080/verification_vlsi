@@ -1,0 +1,63 @@
+/*Code for transaction class is mentioned in the Instruction tab. Write a code to send transaction data between generator and driver. 
+Also, verify the data by printing the value of data members of Generator and Driver in each transaction. Execute the code for 10 random 
+transactions. Share your SV Code.
+
+Instructions:
+class transaction;
+rand bit [7:0] a;
+rand bit [7:0] b;
+rand bit wr;
+endclass*/
+class transaction;
+rand bit [7:0] a;
+rand bit [7:0] b;
+rand bit wr;
+endclass
+
+class generator;
+transaction t;
+mailbox mail_g;
+function new(mailbox m5);
+this.mail_g=m5;
+endfunction
+task run();
+t=new();
+for(int i=0;i<10;i++) begin
+t.randomize;
+mail_g.put(t);
+$display("[GEN] RCVD :|a=%0d|  b=%0d  | wr=%0b |",t.a,t.b,t.wr);
+#10;
+end 
+endtask
+endclass
+
+class driver;
+transaction d;
+mailbox mail_d;
+function new(mailbox m6);
+this.mail_d=m6;
+endfunction
+
+task run();
+forever begin
+mail_d.get(d);
+$display("[DRV] RCVD :|a=%0d|  b=%0d  | wr=%0b |",d.a,d.b,d.wr);
+#10;
+end
+endtask
+endclass
+
+module ass2();
+generator g1;
+driver d1;
+mailbox mbx;
+initial begin
+mbx=new();
+g1=new(mbx);
+d1=new(mbx);
+fork
+g1.run();
+d1.run();
+join
+end
+endmodule
