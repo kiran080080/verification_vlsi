@@ -1,0 +1,226 @@
+`include "uvm_macros.svh";
+import uvm_pkg::*;
+////transaction
+class transaction extends uvm_sequence_item;
+  function new (string path = "transaction");
+  super.new(path);
+  endfunction
+  bit  rst;
+  bit  clk;
+  rand bit  din;
+  bit dout;
+  `uvm_object_utils_begin(transaction)
+  `uvm_field_int(rst,UVM_DEFAULT)
+  `uvm_field_int(clk,UVM_DEFAULT)
+  `uvm_field_int(din,UVM_DEFAULT)
+  `uvm_field_int(dout,UVM_DEFAULT)
+  `uvm_object_utils_end
+endclass
+//////////sequence
+class generator extends uvm_sequence #(transaction);
+  transaction t;
+  `uvm_object_utils(generator)
+  function new (string path ="generator");
+  super.new(path);
+  endfunction
+  virtual task body();
+    t=transaction::type_id::create("t");
+    repeat (10) begin
+    start_item(t);
+    `uvm_info("GEN","Waiting for request",UVM_LOW);
+    t.randomize();
+    `uvm_info("GEN", "Randomized",UVM_LOW);
+    finish_item(t);
+    `uvm_info("GEN", "Data transfered to driver",UVM_LOW);
+    end
+  endtask
+endclass
+//////driver
+class driver extends uvm_driver #(transaction);
+  `uvm_component_utils(driver)
+  transaction t_d;
+  virtual dff dif;
+  function new (string path ="driver", uvm_component parent=null);
+    super.new(path,parent);
+    endfunction
+    task reset_dut();
+      dif.rst<=1;
+      dif.din<=0;
+      repeat(5) @ (posedge dif.clk);
+      dif.rst<=0;
+      `uvm_info("DRV","DUT Reseted",UVM_LOW);
+    endtask
+    virtual function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
+      t_d=transaction::type_id::create("t_d");
+  if(!uvm_config_db #(virtual dff)::get(this,"","dif",dif))
+  `uvm_error("DRV","Cant fetch interface");
+
+    endfunction
+  virtual task run_phase(uvm_phase phase);
+     reset_dut();
+    forever begin
+      seq_item_port.get_next_item(t_d);
+      dif.din=t_d.din;
+      seq_item_port.item_done();
+      repeat (2) @(posedge dif.clk);
+    end
+  endtask
+endclass
+////monitor
+class monitor extends uvm_monitor;
+  `uvm_component_utils(monitor)
+  transaction t_m;
+  virtual dff dif;
+  uvm_analysis_port#(transaction)send;
+  function new (string path ="monitor",uvm_component parent =null);
+    super.new(path,parent);
+    send=new("send",this);
+  endfunction
+  virtual function  void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    t_m=transaction::type_id::create("t_m");
+    if(!uvm_config_db #(virtual dff)::get(this,"","dif",dif))
+  `uvm_error("MON","Cant fetch dut");
+  endfunction
+  virtual task run_phase(uvm_phase phase);
+    @(negedge dif.rst);
+    forever begin
+      repeat (2)@(posedge dif.clk);
+    dif.din=t_m.din;
+      send.write(t_m);
+    end
+  endtask
+endclass
+////scoreboard
+class scoreboard extends uvm_scoreboard;
+  `uvm_component_utils(scoreboard)
+  
+  transaction t_s;
+  uvm_analysis_imp #(transaction,scoreboard) rcv;
+  function new (string path = "scoreboard",uvm_component parent =null);
+    super.new(path,parent);
+    rcv=new("rcv",this);
+  endfunction
+  virtual function void build_phase (uvm_phase phase);
+    super.build_phase(phase);
+    t_s=transaction::type_id::create("t_s");
+  endfunction
+    bit expected_din;
+  virtual function void write(input transaction t);
+    t_s=t;
+    `uvm_info("SCOREBOARD",$sformatf("Data RCVD from MON din=%0d",t_s.din),UVM_LOW);
+    if(t_s.rst==0) begin
+      expected_din=0;
+    end
+    else 
+      begin
+      expected_din=t_s.din;
+      end
+    
+    if(expected_din==t_s.dout) begin
+      `uvm_info("SCO","Data matched",UVM_LOW);
+    end
+    else begin 
+      `uvm_info("SCO","DATA MISMATCHED",UVM_LOW);
+    end
+    
+  endfunction
+endclass
+///agent
+class agent extends uvm_agent;
+  `uvm_component_utils(agent)
+  function new (string path = "agent", uvm_component parent =null);
+    super.new(path,parent);
+  endfunction
+  monitor m;
+  driver d;
+  uvm_sequencer#(transaction)seqr;
+  virtual function  void build_phase (uvm_phase phase);
+    super.build_phase(phase);
+    m=monitor::type_id::create("m",this);
+    d=driver::type_id::create("d",this);
+    seqr=uvm_sequencer#(transaction)::type_id::create("seqr",this);
+  endfunction
+  virtual function void connect_phase(uvm_phase phase);
+    super.connect_phase(phase);
+    d.seq_item_port.connect(seqr.seq_item_export);
+  endfunction
+endclass
+/////env
+class env extends uvm_env;
+  `uvm_component_utils(env)
+  function new (string path = "env", uvm_component parent =null);
+    super.new(path,parent);
+  endfunction
+  agent a;
+  scoreboard s;
+  virtual function void build_phase (uvm_phase phase);
+    super.build_phase (phase);
+    a=agent::type_id::create("a",this);
+    s=scoreboard::type_id::create("s",this);
+  endfunction
+  virtual function void connect_phase (uvm_phase phase);
+    super.connect_phase(phase);
+    a.m.send.connect(s.rcv);
+  endfunction
+endclass
+///test
+class test extends uvm_test;
+  `uvm_component_utils(test)
+  function new(string path ="test", uvm_component parent =null);
+    super.new(path,parent);
+  endfunction
+  generator g;
+  env e;
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    g=generator::type_id::create("g",this);
+    e=env::type_id::create("e",this);
+  endfunction
+  virtual task run_phase(uvm_phase phase);
+    phase.raise_objection(this);
+    g.start(e.a.seqr);
+    #50;
+    phase.drop_objection(this);
+  endtask
+endclass
+///module
+module dffs();
+  dff dif();
+  initial begin
+    dif.clk=0;
+    dif.rst=0;
+  end
+always #10 dif.clk = ~dif.clk;
+  dff1 dff(.clk(dif.clk),.rst(dif.rst),.din(dif.din),.dout(dif.dout));
+           initial begin
+             uvm_config_db #(virtual dff)::set(null,"*","dif",dif);
+             run_test("test");
+           end
+           endmodule
+
+
+             ////////////////design module
+             module dff1
+  (
+    input clk, rst, din, 
+    output reg dout 
+  );
+  
+  always@(posedge clk)
+    begin
+      if(rst == 1'b1) 
+        dout <= 1'b0;
+      else
+        dout <= din;
+    end
+  
+endmodule
+
+interface dff;
+  logic clk;
+  logic rst;
+  logic din;
+  logic dout;
+  endinterface
